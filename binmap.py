@@ -12,7 +12,6 @@ import re
 # wrap under a main function
 # make everything more readable
 # make a great description
-# custom wordlist
 # handle errors
 
 parser = argparse.ArgumentParser(description='ADD NAME')
@@ -26,8 +25,8 @@ CONFIG_PATH = f'{BINMAP_PATH}/config.ini'
 WORDLIST = args.wordlist if args.wordlist else string.printable
 FILE = args.file
 MIN_COUNT = 0
-flag = ''
 found = False
+flag = ''
 
 if (os.path.exists(CONFIG_PATH)):
     config.read(CONFIG_PATH)
@@ -64,18 +63,21 @@ def pin(data):
     count = int(re.search(count_regex, output).groups()[0])
     return count
 
+
 def setup():
     global MIN_COUNT, flag
     case1 = pin(flag + WORDLIST[0])
     case2 = pin(flag + WORDLIST[1])
 
     MIN_COUNT = min([case1, case2])
+
+
 setup()
 while not found:
     for letter in WORDLIST:
         candidate = flag + letter
         count = pin(candidate)
-        
+
         if count > MIN_COUNT:
             flag = candidate
             print(f'HIT : {flag}')

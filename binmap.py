@@ -17,15 +17,16 @@ import re
 parser = argparse.ArgumentParser(description='ADD NAME')
 parser.add_argument('file', metavar='file', help='The file to execute')
 parser.add_argument('--x64', action='store_true', help='Toggles the x64 mode')
-parser.add_argument('-w', '--wordlist', help='The list of caracters to use (minimum 2 caracters)')
+parser.add_argument('-w', '--wordlist', default=string.printable, help='The list of caracters to use (minimum 2 caracters)')
+parser.add_argument('-l', '--length', default=0, type=int, help='The length of the password')
 config = configparser.ConfigParser()
 args = parser.parse_args()
 BINMAP_PATH = os.path.dirname(os.path.realpath(__file__))
 CONFIG_PATH = f'{BINMAP_PATH}/config.ini'
-WORDLIST = args.wordlist if args.wordlist else string.printable
+WORDLIST = args.wordlist
 FILE = args.file
+PAD_LEN = args.length
 MIN_COUNT = 0
-found = False
 flag = ''
 
 if (os.path.exists(CONFIG_PATH)):
@@ -64,28 +65,46 @@ def pin(data):
     return count
 
 
-def setup():
-    global MIN_COUNT, flag
-    case1 = pin(flag + WORDLIST[0])
-    case2 = pin(flag + WORDLIST[1])
+def setup(word1, word2):
+    case1 = pin(word1)
+    case2 = pin(word2)
 
-    MIN_COUNT = min([case1, case2])
+    return min([case1, case2])
 
-
-setup()
-while not found:
-    for letter in WORDLIST:
-        candidate = flag + letter
+def bruteforce(flag, wordlist, pad_len, min_count):
+    for letter in wordlist:
+        candidate = (flag + letter).ljust(pad_len, wordlist[0])
+        print(candidate)
         count = pin(candidate)
 
-        if count > MIN_COUNT:
-            flag = candidate
+        if count > min_count:
+            # Update flag
+            flag = flag + letter
             print(f'HIT : {flag}')
-            setup()
-            break
+            return flag
         else:
             print(f'{candidate} - {count}')
-            if letter == WORDLIST[-1]:
-                found = True
+    # Flag hasn't changed
+    return flag
 
-print(f'FLAG : {flag}')
+
+def main(wordlist, pad_len, min_count):
+    found = False
+    flag = ''
+
+    while not found:
+        word1 =(flag + wordlist[0]).ljust(pad_len, wordlist[0])
+        word2 =(flag + wordlist[1]).ljust(pad_len, wordlist[0])
+        min_count = setup(word1, word2)
+        new_flag = bruteforce(flag, wordlist, pad_len, min_count)
+        
+        # If flag has changed, keep going
+        if new_flag != flag:
+            flag = new_flag
+        else:
+            found = True
+    
+    print(f'FLAG : {flag}')
+
+if __name__ == "__main__":
+    main(WORDLIST, PAD_LEN, MIN_COUNT)

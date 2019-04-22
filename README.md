@@ -13,8 +13,8 @@ Features
 -   Support x64 and x86 binaries
 -   Custom wordlists
 -   Specify length if known
+-   Multi-threading
 -   (soon)  Prefill known inputs
--   (soon)  Multi-threading!
 -   (soon)  Installer for dependencies (notably pin)
 
 Installation

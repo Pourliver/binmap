@@ -1,0 +1,153 @@
+Mon programme se parallèlise bien. C'est un programme qui brute-force l'entrée sortie d'un programme. Peut être utilisé comme KeyGen.
+
+Le programme utilise un outil d'intel, appelé PIN
+https://software.intel.com/en-us/articles/pin-a-dynamic-binary-instrumentation-tool
+
+Un des outils de PIN nous permet de savoir le nombre d'instruction qu'un programme a éxécuté.
+
+Imaginons le bout de code suivant
+
+PASSWORD = "5up3r_DuP3r_u_#_1"
+
+user_input = input("Enter password to access")
+
+for i in range(min(len(PASSWORD), len(user_input))):
+    if (PASSWORD[i] == user_input[i]):
+        print("Access Denied")
+
+print("Access Granted")
+
+
+Mon programme se parallélise parfaitement, car il fait beaucoup d'I/O bloquant, et n'est pas limité par la vitesse du CPU.
+
+Bien que ce programme ne soit pas le genre de programme qu'on retrouve fréquemment, certains programme utilise une logique linéaire afin de valider qu'un input est valide.
+Souvent, au lieu d'être une comparaison, ça pourrait aussi être des opérations arithmétique. On retrouve cette logique fréquemment dans des validations de "serial keys".
+De plus, l'assembleur x86-64 possède une instruction "REPNE SCAS" (scan a string and repeat while not equal), qui est fréquemment utilisé afin d'optimiser beaucoup de programmes.
+Bien que c'est quelque chose de trivial à regarder à la main, en débugant avec GDB, si l'input est très long, ça pourrait prendre beaucoup de temps. Il est donc utile d'automatiser ces tâches.
+
+
+Dans mon éxécutable, avec l'alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz12345678890_", ça prend 32.5 secondes pour trouver le premier caractère, et seulement 6.8 en multi-thread (15 threads)
+
+
+
+Ce que j'ai essayé en multi-threading : 
+Un pool de 1 threads, chaque thread ayant 1 password
+Un pool de 1 threads, chaque thread ayant 5 password
+Un pool de 1 threads, chaque thread ayant 10 password
+
+Un pool de 5 threads, chaque thread ayant 1 password
+Un pool de 5 threads, chaque thread ayant 5 password
+Un pool de 5 threads, chaque thread ayant 10 password
+
+Un pool de 10 threads, chaque thread ayant 1 password
+Un pool de 10 threads, chaque thread ayant 5 password
+Un pool de 10 threads, chaque thread ayant 10 password
+
+Un pool de 15 threads, chaque thread ayant 1 password
+Un pool de 15 threads, chaque thread ayant 5 password
+Un pool de 15 threads, chaque thread ayant 10 password
+
+Un pool de 20 threads, chaque thread ayant 1 password
+Un pool de 20 threads, chaque thread ayant 5 password
+Un pool de 20 threads, chaque thread ayant 10 password
+
+Un pool de 25 threads, chaque thread ayant 1 password
+Un pool de 25 threads, chaque thread ayant 5 password
+Un pool de 25 threads, chaque thread ayant 10 password
+
+Par curiosité, j'ai aussi essayé de voir si plusieurs process pourrait être utile :
+
+Un pool de 1 process, chaque thread ayant 1 password
+Un pool de 2 process, chaque thread ayant 1 password
+Un pool de 4 process, chaque thread ayant 1 password
+Un pool de 8 process, chaque thread ayant 1 password
+
+Un pool de 1 process, chaque thread ayant 5 password
+Un pool de 2 process, chaque thread ayant 5 password
+Un pool de 4 process, chaque thread ayant 5 password
+Un pool de 8 process, chaque thread ayant 5 password
+
+Un pool de 1 process, chaque thread ayant 10 password
+Un pool de 2 process, chaque thread ayant 10 password
+Un pool de 4 process, chaque thread ayant 10 password
+Un pool de 8 process, chaque thread ayant 10 password
+
+Un pool de 1 process, chaque thread ayant 15 password
+Un pool de 2 process, chaque thread ayant 15 password
+Un pool de 4 process, chaque thread ayant 15 password
+Un pool de 8 process, chaque thread ayant 15 password
+
+Les tests ont été éxécuté 3 fois chaques, ceci est la moyenne des temps d'éxécution.
+
+Résultat multi-thread (multiprocessing.pool.ThreadPool)
+(10, 1, 6.79)
+(20, 1, 7.12)
+(15, 1, 7.24)
+(15, 5, 7.52)
+(25, 1, 7.59)
+(25, 5, 7.63)
+(20, 5, 7.69)
+(5, 1, 7.75)
+(10, 10, 7.98)
+(15, 10, 8.1)
+(20, 10, 8.21)
+(10, 5, 8.2)
+(25, 10, 8.3)
+(5, 5, 9.0)
+(5, 10, 11.56)
+(1, 1, 30.9)
+(1, 10, 30.99)
+(1, 5, 31.07)
+
+Résultat multi-thread (concurrent.futures.ThreadPoolExecutor)
+1 , 29.62
+2 , 15.61
+3 , 10.43
+4 , 8.38
+5 , 7.70
+6 , 7.27
+7 , 7.23
+8 , 7.19
+9 , 6.88
+10 , 7.01
+11 , 7.12
+12 , 6.94
+13 , 7.18
+14 , 7.29
+15 , 7.30
+16 , 7.38
+17 , 7.65
+18 , 7.65
+19 , 7.08
+20 , 7.05
+21 , 7.52
+22 , 7.62
+23 , 7.69
+24 , 7.12
+25 , 7.68
+26 , 7.49
+27 , 7.61
+28 , 7.73
+29 , 7.23
+
+
+Résultat multi-process
+(processeurs, chunk, temps)
+(8, 1,  7.11)
+(8, 5,  7.77)
+(8, 10, 7.88)
+(4, 1,  8.49)
+(4, 15, 8.63)
+(4, 5,  8.67)
+(8, 15, 9.15)
+(4, 10, 11.06)
+(2, 1,  15.57)
+(2, 10, 16.08)
+(2, 5,  16.10)
+(2, 15, 16.13)
+(1, 1,  29.55)
+(1, 5,  30.97)
+(1, 10, 31.05)
+(1, 15, 31.18)
+
+j'ai décidé d'utiliser les ThreadPool de python puisque leur librairie est plus simple, lisible, et facile à maintenir.

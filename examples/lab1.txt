@@ -1,0 +1,6 @@
+This executable is part of the RPISEC MBE. I added it to the project as a "test
+case" for Binmap.
+
+Flag : 5up3r_DuP3r_u_#_1
+
+Link to the MBE : https://github.com/RPISEC/MBE

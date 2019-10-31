@@ -1,6 +1,6 @@
 # binmap
 
-binmap is an automatic bruteforcer for CrackMe sytle binaries.
+binmap is an automatic bruteforcer for CrackMe sytle binaries. I have many local changes which should make it more stable, but I don't have time to maintain this script.
 
 Screenshots
 ----
